@@ -202,10 +202,10 @@ const showQuestion = () => {
     imgEl.onload = () => { imgEl.style.visibility = "visible"; };
     imgEl.onerror = () => {
       imgEl.style.visibility = "visible";
-      imgEl.alt = `画像が見つかりません（${id}.png）`;
+      imgEl.alt = `画像が見つかりません（${id}.PNG）`;
     };
-    imgEl.src = `./cards/${id}.png`;
-    imgEl.alt = `札画像 ${id}.png`;
+    imgEl.src = `./cards/${id}.PNG`;
+    imgEl.alt = `札画像 ${id}.PNG`;
   }
   renderList();
 };

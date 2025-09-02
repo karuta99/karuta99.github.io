@@ -2,69 +2,164 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
-  <title>競技かるた 決まり字変化流し</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="./contents.css">
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>問い合わせ＋ファイル送信</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 24px; line-height: 1.6; }
+    form { max-width: 720px; }
+    fieldset { border: 1px solid #ddd; padding: 16px; margin-bottom: 20px; }
+    label { display: block; font-weight: 600; margin: 10px 0 6px; }
+    input[type="text"], textarea {
+      width: 100%; box-sizing: border-box; padding: 8px; font-size: 16px;
+      border: 1px solid #bbb; border-radius: 6px;
+    }
+    input[type="file"] { display: block; margin-top: 6px; }
+    button { padding: 10px 16px; font-size: 16px; border-radius: 6px; }
+    #log { white-space: pre-wrap; background: #fafafa; border: 1px solid #eee; padding: 12px; margin-top: 16px; }
+    .ok { color: #137333; }
+    .ng { color: #b80606; }
+  </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="title">競技かるた 決まり字変化 トレーニングver1.00</div>
-    <div class="grid">
-      <div class="card">
+  <h1>問い合わせフォーム（GAS 連携・Doc/Sheet/Drive）</h1>
 
-        <div class="row" style="display:none;">
-          <div>
-            <div class="muted small">現在の出題（札番号）</div>
-            <div class="id mono" id="qid">-</div>
-          </div>
-          <div>
-            <div class="pill" id="statusPill">未開始</div>
-          </div>
-        </div>
+  <form id="f">
+    <fieldset>
+      <legend>テキスト（UTF-8, 日本語）</legend>
+      <label for="t1">① Googleドキュメントに追記するテキスト</label>
+      <textarea id="t1" name="t1" rows="5" placeholder="ドキュメントへ保存されます" required></textarea>
 
-        <div class="row" style="margin-top:10px;">
-          <div class="muted small">進捗</div>
-          <div class="muted small"><span id="progressText">0 / 100</span></div>
-        </div>
-        <div class="progress" aria-hidden="true"><div id="bar" class="bar"></div></div>        
-        <div class="imgwrap"><img id="cardImg" alt="札画像" /></div>
-        <form id="answerForm" style="margin-top:16px;">
-          <div class="inputrow">
-            <input id="answerInput" type="text" placeholder="現時点の決まり字を入力（Enter可）" autocomplete="off" />
-            <button type="submit">答える</button>
-            <button type="button" class="secondary" id="skipBtn" title="答えずに次の出題へ">スキップ</button>
-          </div>
-        </form>
+      <label for="t2">② Googleスプレッドシート（1行目のセル）</label>
+      <input id="t2" name="t2" type="text" placeholder="シートへ保存されます（例：お名前）" required />
 
-        <div class="result" id="result" style="margin-top:10px;"></div>
-        <div class="small" style="display:none; margin-top:8px;">※※※※※※</div>
+      <label for="t3">③ Googleスプレッドシート（1行目の別セル）</label>
+      <input id="t3" name="t3" type="text" placeholder="シートへ保存されます（例：メール）" required />
+    </fieldset>
 
-        <div class="footer" style="margin-top:16px;">
-          <div class="small">残り札：<span id="remain">100</span> 枚</div>
-          <div class="row">
-            <button type="button" class="secondary" id="resetBtn">リセット</button>
-          </div>
-        </div>
+    <fieldset>
+      <legend>ファイル（小さめ推奨）</legend>
+      <label for="img">画像（Drive保存 / accept=image/*）</label>
+      <input id="img" name="img" type="file" accept="image/*" />
 
-      </div>  <!-- 13行目 -->
+      <label for="vid">動画（Drive保存 / accept=video/*）</label>
+      <input id="vid" name="vid" type="file" accept="video/*" />
+    </fieldset>
 
-      <div class="card">
-        <div class="muted small" style="display:none; margin-bottom:8px;">説明</div>
-        <div class="small" style="display:none;">※※※※※※※※※※※※※※※※※</div>
-        <details style="margin-top:10px;">
-          <summary style="display:inline-block;">決まり字一覧を表示</summary>
-          <button type="button" class="secondary" id="toggleOrderBtn" style="padding:6px 10px;font-size:10px;">並び替え</button>
-            <!--
-            <div class="row" style="margin-top:8px; justify-content:flex-end; gap:8px;">
-              <button type="button" class="secondary" id="toggleOrderBtn" style="padding:6px 10px;font-size:12px;">並び替え</button>
-            </div>
-            -->
-          <div id="list" class="small" style="margin-top:8px;max-height:460px;overflow:auto;"></div>
-        </details>
-      </div>
+    <button type="submit">送信</button>
+  </form>
 
-    </div>  <!-- 12行目 -->
-  </div>  <!-- 10行目 -->
-  <script src="./common.js" defer></script>
+  <div id="log" aria-live="polite"></div>
+
+  <script>
+  // ====== 設定（あなたのGAS WebアプリURLに差し替えてください） ======
+  // GAS 側は doPost(e) を実装し、本文(JSON)を UTF-8 で受けて処理します:
+  //   const body = JSON.parse(e.postData.getDataAsString('UTF-8') || '{}');
+  //   switch(body.type) { 'doc' | 'sheet' | 'upload' ... }
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbxbNpuo9t87jruH2lHbeS1ML3hOy9MFloCpbnyOpU9lnNBPoCL3TmDRpUxABFeo9Njcbw/exec';
+  //const GAS_ID = '..................................AKfycbxbNpuo9t87jruH2lHbeS1ML3hOy9MFloCpbnyOpU9lnNBPoCL3TmDRpUxABFeo9Njcbw';
+    
+  // （任意）簡易トークン。GAS 側で PropertiesService などに保存して照合推奨
+  const TOKEN = ''; // 使う場合は文字列を入れて、payload.token に同梱
+
+  // ====== ユーティリティ ======
+  function log(msg, ok) {
+    var el = document.getElementById('log');
+    var p = document.createElement('div');
+    p.className = ok === true ? 'ok' : ok === false ? 'ng' : '';
+    p.textContent = msg;
+    el.appendChild(p);
+  }
+
+  function postJSON(obj) {
+    return fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }, // 最小限のヘッダ（CORS安定）
+      body: JSON.stringify(obj)
+    }).then(function(r){ return r.json(); });
+  }
+
+  // File → data:URL（Base64）へ。巨大ファイルは非推奨
+  function fileToDataURL(file) {
+    return new Promise(function(resolve, reject){
+      var reader = new FileReader();
+      reader.onload = function(){ resolve(reader.result); }; // "data:...;base64,AAAA"
+      reader.onerror = function(){ reject(reader.error); };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // ====== 送信フロー（4リクエスト：Doc → Sheet → 画像 → 動画） ======
+  document.getElementById('f').addEventListener('submit', async function(e){
+    e.preventDefault();
+    document.getElementById('log').textContent = ''; // クリア
+
+    var t1 = document.getElementById('t1').value || '';
+    var t2 = document.getElementById('t2').value || '';
+    var t3 = document.getElementById('t3').value || '';
+    var imgFile = document.getElementById('img').files[0] || null;
+    var vidFile = document.getElementById('vid').files[0] || null;
+
+    try {
+      // 1) Google ドキュメントへ追記
+      // 期待ペイロード例:
+      // { type: 'doc', text: '本文', token }
+      var res1 = await postJSON({ type: 'doc', text: t1, token: TOKEN });
+      if (!res1 || !res1.ok) throw new Error(res1 && res1.error || 'Doc保存に失敗');
+      log('① ドキュメントに追記しました。', true);
+
+      // 2) Google スプレッドシートへ 1行追記（A列=t2, B列=t3 など）
+      // 期待ペイロード例:
+      // { type: 'sheet', sheetName: 'Responses', rows: [[t2, t3]], token }
+      var res2 = await postJSON({
+        type: 'sheet',
+        sheetName: 'Responses', // GAS 側で存在チェック
+        rows: [[t2, t3]],
+        token: TOKEN
+      });
+      if (!res2 || !res2.ok) throw new Error(res2 && res2.error || 'Sheet保存に失敗');
+      log('② スプレッドシートに1行追加しました。', true);
+
+      // 3) 画像を Drive へ（任意）
+      if (imgFile) {
+        var imgDataUrl = await fileToDataURL(imgFile);
+        // 期待ペイロード例:
+        // { type: 'upload', kind: 'image', filename, mimeType, dataUrl, token }
+        var res3 = await postJSON({
+          type: 'upload',
+          kind: 'image',
+          filename: imgFile.name,
+          mimeType: imgFile.type || 'application/octet-stream',
+          dataUrl: imgDataUrl,
+          token: TOKEN
+        });
+        if (!res3 || !res3.ok) throw new Error(res3 && res3.error || '画像アップロード失敗');
+        log('③ 画像を Drive に保存しました: ' + (res3.url || ('fileId=' + res3.fileId)), true);
+      } else {
+        log('③ 画像なし（スキップ）');
+      }
+
+      // 4) 動画を Drive へ（任意・小さめ推奨）
+      if (vidFile) {
+        var vidDataUrl = await fileToDataURL(vidFile);
+        var res4 = await postJSON({
+          type: 'upload',
+          kind: 'video',
+          filename: vidFile.name,
+          mimeType: vidFile.type || 'application/octet-stream',
+          dataUrl: vidDataUrl,
+          token: TOKEN
+        });
+        if (!res4 || !res4.ok) throw new Error(res4 && res4.error || '動画アップロード失敗');
+        log('④ 動画を Drive に保存しました: ' + (res4.url || ('fileId=' + res4.fileId)), true);
+      } else {
+        log('④ 動画なし（スキップ）');
+      }
+
+      log('すべて完了しました。', true);
+    } catch (err) {
+      log('エラー: ' + (err && err.message ? err.message : String(err)), false);
+    }
+  });
+  </script>
 </body>
 </html>

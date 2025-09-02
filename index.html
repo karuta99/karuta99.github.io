@@ -69,13 +69,25 @@
     p.textContent = msg;
     el.appendChild(p);
   }
-
+  /*
   function postJSON(obj) {
     return fetch(GAS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }, // 最小限のヘッダ（CORS安定）
       body: JSON.stringify(obj)
     }).then(function(r){ return r.json(); });
+  }
+  */
+  function postJSON(obj) {
+    return fetch(GAS_URL, {
+      method: 'POST',
+      // ヘッダは付けない（ブラウザが text/plain で送る＝プリフライト回避）
+      body: JSON.stringify(obj)
+    }).then(async (r) => {
+      const t = await r.text();     // 念のためテキストで受ける
+      try { return JSON.parse(t); } // JSONに変換
+      catch { return { ok:false, error:'Bad JSON: '+t.slice(0,200) }; }
+    });
   }
 
   // File → data:URL（Base64）へ。巨大ファイルは非推奨

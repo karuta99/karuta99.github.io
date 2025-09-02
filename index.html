@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>問い合わせ＋ファイル送信</title>
+  <title>連絡・情報共有フォーム</title>
   <style>
     body { font-family: system-ui, sans-serif; margin: 24px; line-height: 1.6; }
     form { max-width: 720px; }
@@ -21,27 +21,27 @@
   </style>
 </head>
 <body>
-  <h1>問い合わせフォーム（GAS 連携・Doc/Sheet/Drive）</h1>
+  <h1>連絡・情報共有フォーム</h1>
 
   <form id="f">
     <fieldset>
-      <legend>テキスト（UTF-8, 日本語）</legend>
-      <label for="t1">① Googleドキュメントに追記するテキスト</label>
-      <textarea id="t1" name="t1" rows="5" placeholder="ドキュメントへ保存されます" required></textarea>
-
-      <label for="t2">② Googleスプレッドシート（1行目のセル）</label>
-      <input id="t2" name="t2" type="text" placeholder="シートへ保存されます（例：お名前）" required />
-
-      <label for="t3">③ Googleスプレッドシート（1行目の別セル）</label>
-      <input id="t3" name="t3" type="text" placeholder="シートへ保存されます（例：メール）" required />
+      <legend>テキスト入力</legend>
+      <label for="t2">ユーザー名</label>
+      <input id="t2" name="t2" type="text" placeholder="ニックネーム・名前など(仮でOK)" required />
+      <label for="t3">要件</label>
+      <input id="t3" name="t3" type="text" placeholder="バグ報告/意見/質問など" required />
+      <label for="t1">内容</label>
+      <textarea id="t1" name="t1" rows="5" placeholder="内容の詳細を記載" required></textarea>
     </fieldset>
 
     <fieldset>
-      <legend>ファイル（小さめ推奨）</legend>
-      <label for="img">画像（Drive保存 / accept=image/*）</label>
+      <legend>ファイル(サイズ制限あり/1回の送信に30秒以上かかる場合エラー?)
+        <br>複数選択ファイル送信やサイズ超過で送信できない場合は、ファイル共有のURLをお送りいただけると幸いです。
+      </legend>
+      <label for="img">画像（accept=image/*）</label>
       <input id="img" name="img" type="file" accept="image/*" />
 
-      <label for="vid">動画（Drive保存 / accept=video/*）</label>
+      <label for="vid">動画（accept=video/*）</label>
       <input id="vid" name="vid" type="file" accept="video/*" />
     </fieldset>
 
@@ -69,15 +69,7 @@
     p.textContent = msg;
     el.appendChild(p);
   }
-  /*
-  function postJSON(obj) {
-    return fetch(GAS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' }, // 最小限のヘッダ（CORS安定）
-      body: JSON.stringify(obj)
-    }).then(function(r){ return r.json(); });
-  }
-  */
+
   function postJSON(obj) {
     return fetch(GAS_URL, {
       method: 'POST',

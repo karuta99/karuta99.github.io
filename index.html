@@ -25,7 +25,7 @@
 
   <form id="f">
     <fieldset>
-      <legend>テキスト入力</legend>
+      <legend>テキスト入力(すべて入力必須)</legend>
       <label for="t2">ユーザー名</label>
       <input id="t2" name="t2" type="text" placeholder="ニックネーム・名前など(仮でOK)" required />
       <label for="t3">要件</label>
@@ -36,7 +36,7 @@
 
     <fieldset>
       <legend>ファイル(サイズ制限あり/1回の送信に30秒以上かかる場合エラー?)
-        <br>複数選択ファイル送信やサイズ超過で送信できない場合は、ファイル共有のURLをお送りいただけると幸いです。
+        <br>ファイル送信ができない場合は、ファイル共有のURLでお送りいただけると幸いです。
       </legend>
       <label for="img">画像（accept=image/*）</label>
       <input id="img" name="img" type="file" accept="image/*" />
@@ -105,14 +105,11 @@
 
     try {
       // 1) Google ドキュメントへ追記
-      // 期待ペイロード例:
       // { type: 'doc', text: '本文', token }
       var res1 = await postJSON({ type: 'doc', text: t1, token: TOKEN });
-      if (!res1 || !res1.ok) throw new Error(res1 && res1.error || 'Doc保存に失敗');
-      log('① ドキュメントに追記しました。', true);
+      if (!res1 || !res1.ok) throw new Error(res1 && res1.error || 'テキスト送信失敗');
 
       // 2) Google スプレッドシートへ 1行追記（A列=t2, B列=t3 など）
-      // 期待ペイロード例:
       // { type: 'sheet', sheetName: 'Responses', rows: [[t2, t3]], token }
       var res2 = await postJSON({
         type: 'sheet',
@@ -120,8 +117,8 @@
         rows: [[t2, t3]],
         token: TOKEN
       });
-      if (!res2 || !res2.ok) throw new Error(res2 && res2.error || 'Sheet保存に失敗');
-      log('② スプレッドシートに1行追加しました。', true);
+      if (!res2 || !res2.ok) throw new Error(res2 && res2.error || 'テキスト送信失敗');
+
 
       // 3) 画像を Drive へ（任意）
       if (imgFile) {
@@ -137,9 +134,10 @@
           token: TOKEN
         });
         if (!res3 || !res3.ok) throw new Error(res3 && res3.error || '画像アップロード失敗');
-        log('③ 画像を Drive に保存しました: ' + (res3.url || ('fileId=' + res3.fileId)), true);
+        log('画像を送信しました');
+        //log('画像を送信しました: ' + (res3.url || ('fileId=' + res3.fileId)), true);
       } else {
-        log('③ 画像なし（スキップ）');
+        log('画像なし（スキップ）');
       }
 
       // 4) 動画を Drive へ（任意・小さめ推奨）
@@ -154,11 +152,11 @@
           token: TOKEN
         });
         if (!res4 || !res4.ok) throw new Error(res4 && res4.error || '動画アップロード失敗');
-        log('④ 動画を Drive に保存しました: ' + (res4.url || ('fileId=' + res4.fileId)), true);
+        log('動画を送信しました');
+        //log('動画を送信しました: ' + (res4.url || ('fileId=' + res4.fileId)), true);
       } else {
-        log('④ 動画なし（スキップ）');
+        log('動画なし（スキップ）');
       }
-
       log('すべて完了しました。', true);
     } catch (err) {
       log('エラー: ' + (err && err.message ? err.message : String(err)), false);
